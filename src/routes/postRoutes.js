@@ -10,7 +10,7 @@ const {
 const router = express.Router();
 
 router.get("/", getPosts); // Get all posts
-router.post("/", createPost); // Crate a post
+router.post("/", createPost); // Create a post
 router.put("/:id", updatePost); // Update a post
 router.delete("/:id", deletePost); // Delete a post
 router.get("/:id", getPostById); // Get a post

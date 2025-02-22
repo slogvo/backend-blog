@@ -1,26 +1,58 @@
 const Post = require("../models/Post");
 
-// Lấy tất cả bài viết
-const getPosts = async (req, res) => {
+// Get all posts
+const getPosts = async (_req, res) => {
   try {
+    // const { id, user } = req.query;
+    // let query = {};
+
+    // if (id) query._id = id;
+    // if (user) query.author = user;
+
     const posts = await Post.find();
+    // Populate the author field with the username of the author of each post.
+    // const posts = await Post.find(query).populate("author", "username");
+    // Lấy toàn bộ
+    // const posts = await Post.find(query).populate("author");
+    // Model.find(query).populate('path', 'field1 field2 field3');
+    // path: Tên trường tham chiếu (ở đây là 'author').
+    // field1 field2 field3: Các trường bạn muốn lấy từ collection được tham chiếu (User), cách nhau bằng dấu  cách.
+
+    // Loại bỏ trường nhạy cảm (như password)
+    // await Post.find(query).populate('author', '-password');
+
+    // Nếu User có trường tham chiếu khác (như profile)
+    // await Post.find(query).populate({
+    //   path: 'author',
+    //   select: 'username email',
+    //   populate: { path: 'profile', select: 'bio' }
+    // });
+
+    // Thêm .limit(10) để chỉ lấy 10 bài viết: await Post.find(query).populate('author', 'username email').limit(10);
+
+    // Ý nghĩa: "Điền" (populate) dữ liệu tham chiếu từ collection khác vào trường author của Post.
     res.json(posts);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
   }
 };
 
-// Tạo bài viết mới
+// Create a new post
 const createPost = async (req, res) => {
   try {
-    const { title, content } = req.body;
+    const { title, content, author } = req.body;
     const imageResult = await cloudinary.uploader.upload(req.file.path);
-    if (!title || !content) {
+    if (!title || !content || !author) {
       return res
         .status(400)
-        .json({ message: "Title and content are required" });
+        .json({ message: "Title and content and author are required'" });
     }
-    const post = new Post({ title, content, imageUrl: imageResult.secure_url });
+    const post = new Post({
+      title,
+      content,
+      author,
+      imageUrl: imageResult.secure_url,
+    });
     await post.save();
     res.status(201).json(post);
   } catch (error) {

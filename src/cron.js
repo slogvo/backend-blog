@@ -1,7 +1,7 @@
 const cron = require("node-cron");
 const axios = require("axios");
 
-const PING_URL = `https://${
+const PING_URL = `${
   process.env.RENDER_API_URL || "https://blog-express-jf74.onrender.com"
 }`;
 

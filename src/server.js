@@ -1,9 +1,11 @@
-require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const { rateLimit } = require("express-rate-limit");
+
+require("dotenv").config();
+require("./cron");
 
 const notionRoutes = require("./routes/notion");
 const { errorHandler, notFound } = require("./middlewares/errorMiddleware");

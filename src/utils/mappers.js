@@ -1,5 +1,5 @@
 /**
- * Chuyển đổi dữ liệu bài viết từ Notion sang định dạng API
+ * Converts post data from Notion to API format
  */
 const mapPostData = async (page, blocks = null) => {
   const properties = page.properties;
@@ -7,9 +7,10 @@ const mapPostData = async (page, blocks = null) => {
   // Basic
   const post = {
     id: page.id,
-    title: properties.Title?.title?.[0]?.plain_text || "Untitled",
+    title: properties.Name?.title?.[0]?.plain_text || "Untitled",
+    cover: page?.cover?.external?.url || properties.Cover?.files?.[0]?.file?.url || null,
     slug: properties.Slug?.rich_text?.[0]?.plain_text || page.id,
-    status: properties.Status?.status?.name || "Draft",
+    status: properties.Status?.select?.name ||  properties.Status?.status?.name || "Draft",
     publishDate: properties.PublishDate?.date?.start || null,
     featuredImage: properties.FeaturedImage?.files?.[0]?.file?.url || null,
     excerpt: properties.Excerpt?.rich_text?.[0]?.plain_text || "",
@@ -31,9 +32,10 @@ const mapPostData = async (page, blocks = null) => {
     const categoryIds = properties.Category.relation.map((rel) => rel.id);
     post.categoryIds = categoryIds;
 
-    // Thông thường ở đây bạn sẽ muốn lấy thêm thông tin về category
-    // Nhưng điều này sẽ làm tăng số lượng API calls
-    // Vì vậy chúng ta chỉ trả về ID và frontend sẽ lấy thông tin chi tiết sau
+  // Normally, you would want to fetch additional information about the category here
+  // However, this would increase the number of API calls
+  // Therefore, we only return the ID, and the frontend will fetch the detailed information later
+
   } else {
     post.categoryIds = [];
   }
@@ -43,12 +45,14 @@ const mapPostData = async (page, blocks = null) => {
     const authorId = properties.Author.relation[0].id;
     post.authorId = authorId;
 
-    // Tương tự như trên, chúng ta chỉ trả về ID author
+  // Similarly, we only return the author ID
+
   } else {
     post.authorId = null;
   }
 
-  // Content blocks (nếu được yêu cầu)
+  // Content blocks (if requested)
+
   if (blocks) {
     post.content = blocks;
   }
@@ -57,9 +61,10 @@ const mapPostData = async (page, blocks = null) => {
 };
 
 /**
- * Chuyển đổi dữ liệu tác giả từ Notion sang định dạng API
+ * Convert author data from Notion to API format
  */
 const mapAuthorData = async (page) => {
+  console.log("🚀 ~ mapAuthorData ~ page:", page)
   const properties = page.properties;
 
   return {
@@ -75,7 +80,7 @@ const mapAuthorData = async (page) => {
 };
 
 /**
- * Chuyển đổi dữ liệu danh mục từ Notion sang định dạng API
+ * Convert category data from Notion to API format
  */
 const mapCategoryData = (page) => {
   const properties = page.properties;
@@ -90,7 +95,7 @@ const mapCategoryData = (page) => {
 };
 
 /**
- * Chuyển đổi dữ liệu cài đặt từ Notion sang định dạng API
+ * Convert settings data from Notion to API format
  */
 const mapSettingsData = (page) => {
   if (!page) return {};

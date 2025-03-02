@@ -7,7 +7,7 @@ const {
 } = require("../utils/mappers");
 
 /**
- * Lấy danh sách bài viết với phân trang và lọc
+ * Retrieves a list of posts with pagination and filtering
  */
 const getPosts = async (req, res, next) => {
   try {
@@ -63,7 +63,7 @@ const getPosts = async (req, res, next) => {
     // Query Notion database
     const response = await notion.databases.query({
       database_id: databaseIds.posts,
-      // filter: filter,
+      filter: filter,
       // sorts: [
       //   {
       //     property: "PublishDate",
@@ -73,6 +73,7 @@ const getPosts = async (req, res, next) => {
       page_size: parseInt(pageSize),
       start_cursor: page > 1 ? (page - 1) * pageSize : undefined,
     });
+    console.log("🚀 ~ getPosts ~ response:", response?.results[0]?.properties?.Excerpt?.rich_text)
 
     // Map Notion data to our format
     const posts = await Promise.all(response.results.map(mapPostData));
@@ -92,7 +93,7 @@ const getPosts = async (req, res, next) => {
 };
 
 /**
- * Lấy chi tiết bài viết theo ID
+ * Retrieves detailed information about a post by its ID
  */
 const getPostById = async (req, res, next) => {
   try {
@@ -109,6 +110,7 @@ const getPostById = async (req, res, next) => {
     const pageData = await notion.pages.retrieve({
       page_id: id,
     });
+    console.log("🚀 ~ getPostById ~ pageData:", pageData)
 
     // Get page content (blocks)
     const blocks = await getAllBlocksByBlockId(id);

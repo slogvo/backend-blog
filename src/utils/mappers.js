@@ -1,3 +1,5 @@
+const { slugify } = require("./slugify");
+
 /**
  * Converts post data from Notion to API format
  */
@@ -9,11 +11,12 @@ const mapPostData = async (page, blocks = null) => {
     id: page.id,
     title: properties.Name?.title?.[0]?.plain_text || "Untitled",
     cover: page?.cover?.external?.url || properties.Cover?.files?.[0]?.file?.url || null,
-    slug: properties.Slug?.rich_text?.[0]?.plain_text || page.id,
+    slug: properties.Slug?.rich_text?.[0]?.plain_text || slugify(properties.Name?.title?.[0]?.plain_text || "untitled"),
     status: properties.Status?.select?.name ||  properties.Status?.status?.name || "Draft",
     publishDate: properties.PublishDate?.date?.start || null,
-    featuredImage: properties.FeaturedImage?.files?.[0]?.file?.url || null,
+    // featuredImage: properties.FeaturedImage?.files?.[0]?.file?.url || null,  
     excerpt: properties.Excerpt?.rich_text?.[0]?.plain_text || "",
+    author: properties.Author?.select?.name
   };
 
   // Tags/Categories
@@ -44,7 +47,6 @@ const mapPostData = async (page, blocks = null) => {
   if (properties.Author?.relation?.length > 0) {
     const authorId = properties.Author.relation[0].id;
     post.authorId = authorId;
-
   // Similarly, we only return the author ID
 
   } else {

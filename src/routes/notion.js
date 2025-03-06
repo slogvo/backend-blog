@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   getPosts,
   getPostById,
+  getPostBySlug,
   getAuthors,
   getAuthorById,
   getCategories,
@@ -11,7 +12,8 @@ const {
 
 // Posts routes
 router.get("/posts", getPosts);
-router.get("/posts/:id", getPostById);
+// router.get("/posts/:id", getPostById);
+router.get("/posts/:slug", getPostBySlug);
 
 // Authors routes
 router.get("/authors", getAuthors);

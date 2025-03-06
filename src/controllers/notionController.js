@@ -95,25 +95,66 @@ const getPosts = async (req, res, next) => {
 /**
  * Retrieves detailed information about a post by its ID
  */
-const getPostById = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const cacheKey = `post_${id}`;
+// const getPostById = async (req, res, next) => {
+//   try {
+//     const { id } = req.params;
+//     const cacheKey = `post_${id}`;
 
-    // Check cache first
+//     // Check cache first
+//     const cachedData = cache.get(cacheKey);
+//     if (cachedData) {
+//       return res.json(cachedData);
+//     }
+
+//     // Get page data
+//     const pageData = await notion.pages.retrieve({
+//       page_id: id,
+//     });
+//     console.log("🚀 ~ getPostById ~ pageData:", pageData)
+
+//     // Get page content (blocks)
+//     const blocks = await getAllBlocksByBlockId(id);
+
+//     // Map data
+//     const post = await mapPostData(pageData, blocks);
+
+//     // Store in cache
+//     cache.set(cacheKey, post);
+//     res.json(post);
+//   } catch (error) {
+//     next(error);
+//   }
+// };
+
+/**
+ * Retrieves detailed information about a post by its slug (or ID as fallback)
+ */
+const getPostBySlug = async (req, res, next) => {
+  try {
+    const { slug } = req.params; 
+    const cacheKey = `post_${slug}`;
+
     const cachedData = cache.get(cacheKey);
     if (cachedData) {
       return res.json(cachedData);
     }
 
-    // Get page data
-    const pageData = await notion.pages.retrieve({
-      page_id: id,
+    const response = await notion.databases.query({
+      database_id: databaseIds.posts,
+      filter: {
+        property: "Slug",
+        rich_text: {
+          equals: slug,
+        },
+      },
     });
-    console.log("🚀 ~ getPostById ~ pageData:", pageData)
 
-    // Get page content (blocks)
-    const blocks = await getAllBlocksByBlockId(id);
+    if (!response.results.length) {
+      return res.status(404).json({ error: "Post not found" });
+    }
+
+    const pageData = response.results[0]; 
+    const blocks = await getAllBlocksByBlockId(pageData.id);
 
     // Map data
     const post = await mapPostData(pageData, blocks);
@@ -127,35 +168,83 @@ const getPostById = async (req, res, next) => {
 };
 
 /**
- * Lấy tất cả blocks của một trang Notion
+ * Retrieves all blocks of a Notion page
  */
+// const getAllBlocksByBlockId = async (blockId) => {
+//   let blocks = [];
+//   let cursor;
+
+//   while (true) {
+//     const { results, next_cursor } = await notion.blocks.children.list({
+//       block_id: blockId,
+//       start_cursor: cursor,
+//     });
+
+//     blocks = [...blocks, ...results];
+
+//     if (!next_cursor) break;
+//     cursor = next_cursor;
+//   }
+
+//   // Get nested blocks if any
+//   for (let i = 0; i < blocks.length; i++) {
+//     const block = blocks[i];
+
+//     if (block.has_children) {
+//       const childBlocks = await getAllBlocksByBlockId(block.id);
+//       blocks[i].children = childBlocks;
+//     }
+//   }
+
+//   return blocks;
+// };
+
 const getAllBlocksByBlockId = async (blockId) => {
   let blocks = [];
   let cursor;
 
-  while (true) {
-    const { results, next_cursor } = await notion.blocks.children.list({
-      block_id: blockId,
-      start_cursor: cursor,
-    });
+  try {
+    while (true) {
+      try {
+        const { results, next_cursor } = await notion.blocks.children.list({
+          block_id: blockId,
+          start_cursor: cursor,
+        });
 
-    blocks = [...blocks, ...results];
+        blocks = [...blocks, ...results.filter(block => {
+          if (block.type === "unsupported") {
+            console.log(`Skipping unsupported block: ${block.id}`);
+            return false;
+          }
+          return true;
+        })];
 
-    if (!next_cursor) break;
-    cursor = next_cursor;
-  }
-
-  // Get nested blocks if any
-  for (let i = 0; i < blocks.length; i++) {
-    const block = blocks[i];
-
-    if (block.has_children) {
-      const childBlocks = await getAllBlocksByBlockId(block.id);
-      blocks[i].children = childBlocks;
+        if (!next_cursor) break;
+        cursor = next_cursor;
+      } catch (error) {
+        console.log(`Error fetching blocks for ${blockId}: ${error.message}`);
+        break; 
+      }
     }
-  }
 
-  return blocks;
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i];
+      if (block.has_children) {
+        try {
+          const childBlocks = await getAllBlocksByBlockId(block.id);
+          blocks[i].children = childBlocks;
+        } catch (childError) {
+          console.log(`Skipping nested blocks for ${block.id}: ${childError.message}`);
+          blocks[i].children = []; 
+        }
+      }
+    }
+
+    return blocks;
+  } catch (error) {
+    console.log(`Critical error in getAllBlocksByBlockId for ${blockId}: ${error.message}`);
+    return blocks; 
+  }
 };
 
 /**
@@ -290,7 +379,8 @@ const getSettings = async (req, res, next) => {
 
 module.exports = {
   getPosts,
-  getPostById,
+  // getPostById,
+  getPostBySlug,
   getAuthors,
   getAuthorById,
   getCategories,

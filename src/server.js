@@ -1,44 +1,60 @@
-const express = require("express");
-const cors = require("cors");
-const helmet = require("helmet");
-const morgan = require("morgan");
-const { rateLimit } = require("express-rate-limit");
+// src/server.js
+const express = require('express');
+const cors = require('cors');
+const helmet = require('helmet');
+const morgan = require('morgan');
+const { rateLimit } = require('express-rate-limit');
+const notionRoutes = require('./routes/notion');
+const sendEmailRoutes = require('./routes/send-email');
+const { errorHandler, notFound } = require('./middlewares/errorMiddleware');
 
-require("dotenv").config();
-require("./cron");
+const configureMiddleware = (app) => {
+  app.use(express.json());
+  app.use(
+    cors({
+      origin: process.env.CORS_ORIGIN || '*',
+      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      allowedHeaders: ['Content-Type', 'Authorization'],
+    }),
+  );
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+        },
+      },
+    }),
+  );
+  app.use(morgan('dev'));
 
-const notionRoutes = require("./routes/notion");
-const { errorHandler, notFound } = require("./middlewares/errorMiddleware");
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: {
+      status: 429,
+      message: 'Too many requests, please try again later',
+    },
+  });
+  app.use(limiter);
+};
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+const configureRoutes = (app) => {
+  app.use('/api', notionRoutes);
+  app.use('/api', sendEmailRoutes);
+  app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+};
 
-// Middleware
-app.use(express.json());
-app.use(cors());
-app.use(helmet());
-app.use(morgan("dev"));
+const configureErrorHandling = (app) => {
+  app.use(notFound);
+  app.use(errorHandler);
+};
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-});
-app.use(limiter);
+const initServer = async (app) => {
+  configureMiddleware(app);
+  configureRoutes(app);
+  configureErrorHandling(app);
+};
 
-// Routes
-app.use("/api", notionRoutes);
-
-// Health check endpoint
-app.get("/health", (req, res) => {
-  res.status(200).json({ status: "ok" });
-});
-
-// Error handling
-app.use(notFound);
-app.use(errorHandler);
-
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT} in ${process.env.NODE_ENV} mode`);
-});
+module.exports = { initServer };

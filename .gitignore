@@ -29,3 +29,5 @@ Thumbs.db
 *.sln
 
 package-lock.json
+
+service-account-key.json

@@ -1,25 +1,26 @@
-const { notion, cache, databaseIds } = require("../config/notion");
+const { cache, databaseIds, notion } = require('../config/notion');
 const {
   mapPostData,
   mapAuthorData,
   mapCategoryData,
   mapSettingsData,
-} = require("../utils/mappers");
+} = require('../utils/mappers');
 
 /**
  * Retrieves a list of posts with pagination and filtering
  */
 const getPosts = async (req, res, next) => {
+  // const notion = getNotionClient();
   try {
     const {
       page = 1,
       pageSize = 10,
       category,
       tag,
-      status = "Published",
+      status = 'Published',
     } = req.query;
-    const cacheKey = `posts_${page}_${pageSize}_${category || ""}_${
-      tag || ""
+    const cacheKey = `posts_${page}_${pageSize}_${category || ''}_${
+      tag || ''
     }_${status}`;
 
     // Check cache first
@@ -32,7 +33,7 @@ const getPosts = async (req, res, next) => {
     const filter = {
       and: [
         {
-          property: "Status",
+          property: 'Status',
           status: {
             equals: status,
           },
@@ -43,7 +44,7 @@ const getPosts = async (req, res, next) => {
     // Add category filter if provided
     if (category) {
       filter.and.push({
-        property: "Category",
+        property: 'Category',
         relation: {
           contains: category,
         },
@@ -53,7 +54,7 @@ const getPosts = async (req, res, next) => {
     // Add tag filter if provided
     if (tag) {
       filter.and.push({
-        property: "Tags",
+        property: 'Tags',
         multi_select: {
           contains: tag,
         },
@@ -73,7 +74,10 @@ const getPosts = async (req, res, next) => {
       page_size: parseInt(pageSize),
       start_cursor: page > 1 ? (page - 1) * pageSize : undefined,
     });
-    console.log("🚀 ~ getPosts ~ response:", response?.results[0]?.properties?.Excerpt?.rich_text)
+    console.log(
+      '🚀 ~ getPosts ~ response:',
+      response?.results[0]?.properties?.Excerpt?.rich_text,
+    );
 
     // Map Notion data to our format
     const posts = await Promise.all(response.results.map(mapPostData));
@@ -131,7 +135,7 @@ const getPosts = async (req, res, next) => {
  */
 const getPostBySlug = async (req, res, next) => {
   try {
-    const { slug } = req.params; 
+    const { slug } = req.params;
     const cacheKey = `post_${slug}`;
 
     const cachedData = cache.get(cacheKey);
@@ -142,7 +146,7 @@ const getPostBySlug = async (req, res, next) => {
     const response = await notion.databases.query({
       database_id: databaseIds.posts,
       filter: {
-        property: "Slug",
+        property: 'Slug',
         rich_text: {
           equals: slug,
         },
@@ -150,10 +154,10 @@ const getPostBySlug = async (req, res, next) => {
     });
 
     if (!response.results.length) {
-      return res.status(404).json({ error: "Post not found" });
+      return res.status(404).json({ error: 'Post not found' });
     }
 
-    const pageData = response.results[0]; 
+    const pageData = response.results[0];
     const blocks = await getAllBlocksByBlockId(pageData.id);
 
     // Map data
@@ -211,19 +215,22 @@ const getAllBlocksByBlockId = async (blockId) => {
           start_cursor: cursor,
         });
 
-        blocks = [...blocks, ...results.filter(block => {
-          if (block.type === "unsupported") {
-            console.log(`Skipping unsupported block: ${block.id}`);
-            return false;
-          }
-          return true;
-        })];
+        blocks = [
+          ...blocks,
+          ...results.filter((block) => {
+            if (block.type === 'unsupported') {
+              console.log(`Skipping unsupported block: ${block.id}`);
+              return false;
+            }
+            return true;
+          }),
+        ];
 
         if (!next_cursor) break;
         cursor = next_cursor;
       } catch (error) {
         console.log(`Error fetching blocks for ${blockId}: ${error.message}`);
-        break; 
+        break;
       }
     }
 
@@ -234,16 +241,20 @@ const getAllBlocksByBlockId = async (blockId) => {
           const childBlocks = await getAllBlocksByBlockId(block.id);
           blocks[i].children = childBlocks;
         } catch (childError) {
-          console.log(`Skipping nested blocks for ${block.id}: ${childError.message}`);
-          blocks[i].children = []; 
+          console.log(
+            `Skipping nested blocks for ${block.id}: ${childError.message}`,
+          );
+          blocks[i].children = [];
         }
       }
     }
 
     return blocks;
   } catch (error) {
-    console.log(`Critical error in getAllBlocksByBlockId for ${blockId}: ${error.message}`);
-    return blocks; 
+    console.log(
+      `Critical error in getAllBlocksByBlockId for ${blockId}: ${error.message}`,
+    );
+    return blocks;
   }
 };
 
@@ -252,7 +263,7 @@ const getAllBlocksByBlockId = async (blockId) => {
  */
 const getAuthors = async (req, res, next) => {
   try {
-    const cacheKey = "authors";
+    const cacheKey = 'authors';
 
     // Check cache first
     const cachedData = cache.get(cacheKey);
@@ -265,8 +276,8 @@ const getAuthors = async (req, res, next) => {
       database_id: databaseIds.authors,
       sorts: [
         {
-          property: "Name",
-          direction: "ascending",
+          property: 'Name',
+          direction: 'ascending',
         },
       ],
     });
@@ -317,7 +328,7 @@ const getAuthorById = async (req, res, next) => {
  */
 const getCategories = async (req, res, next) => {
   try {
-    const cacheKey = "categories";
+    const cacheKey = 'categories';
 
     // Check cache first
     const cachedData = cache.get(cacheKey);
@@ -330,8 +341,8 @@ const getCategories = async (req, res, next) => {
       database_id: databaseIds.categories,
       sorts: [
         {
-          property: "Name",
-          direction: "ascending",
+          property: 'Name',
+          direction: 'ascending',
         },
       ],
     });
@@ -352,7 +363,7 @@ const getCategories = async (req, res, next) => {
  */
 const getSettings = async (req, res, next) => {
   try {
-    const cacheKey = "settings";
+    const cacheKey = 'settings';
 
     // Check cache first
     const cachedData = cache.get(cacheKey);

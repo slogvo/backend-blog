@@ -6,9 +6,21 @@ const {
   getPostBySlug,
   getAuthors,
   getAuthorById,
+  searchPosts,
+  globalSearch,
   getCategories,
   getSettings,
 } = require('../controllers/notionController');
+
+// Define asyncHandler
+const asyncHandler = (fn) => (req, res, next) =>
+  Promise.resolve(fn(req, res, next)).catch(next);
+
+// Middleware logging
+router.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 const logRequest = (req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
@@ -36,6 +48,15 @@ v1Router.get('/posts', getPosts);
  */
 v1Router.get('/posts/:slug', getPostBySlug);
 
+/**
+ * @route GET /api/v1/search
+ * @desc Get search post. GET /api/v1/search?query=javascript&page=1&pageSize=10&category=tech
+ * @access Public
+ */
+
+v1Router.get('/search', asyncHandler(searchPosts));
+
+v1Router.get('/global-search', asyncHandler(globalSearch));
 /**
  * @route GET /api/v1/authors
  * @desc Get all authors from Notion

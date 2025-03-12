@@ -4,7 +4,7 @@ const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { rateLimit } = require('express-rate-limit');
-const notionRoutes = require('./routes/notion');
+const notionRoutes = require('./routes/notionRoute');
 const sendEmailRoutes = require('./routes/send-email');
 const { errorHandler, notFound } = require('./middlewares/errorMiddleware');
 

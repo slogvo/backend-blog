@@ -1,19 +1,17 @@
 // src/index.js
 require('dotenv').config();
 
-console.log('Checking environment variables after dotenv:');
-console.log('EMAIL_USER:', process.env.EMAIL_USER);
-console.log('EMAIL_PASS:', process.env.EMAIL_PASS);
-console.log('RECEIVER_EMAIL:', process.env.RECEIVER_EMAIL);
+// console.log('Checking environment variables after dotenv:');
+// console.log('EMAIL_USER:', process.env.EMAIL_USER);
 
-if (
-  !process.env.EMAIL_USER ||
-  !process.env.EMAIL_PASS ||
-  !process.env.RECEIVER_EMAIL
-) {
-  console.error('Error: Missing critical environment variables. Exiting...');
-  process.exit(1);
-}
+// if (
+//   !process.env.EMAIL_USER ||
+//   !process.env.EMAIL_PASS ||
+//   !process.env.RECEIVER_EMAIL
+// ) {
+//   console.error('Error: Missing critical environment variables. Exiting...');
+//   process.exit(1);
+// }
 
 const express = require('express');
 const { initServer } = require('./server');

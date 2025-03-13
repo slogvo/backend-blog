@@ -1,14 +1,18 @@
 // src/server.js
 const express = require('express');
 const cors = require('cors');
+const connectDB = require('./config/db');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const { rateLimit } = require('express-rate-limit');
+const authRoutes = require('./routes/authRoutes');
 const notionRoutes = require('./routes/notionRoute');
 const sendEmailRoutes = require('./routes/send-email');
 const { errorHandler, notFound } = require('./middlewares/errorMiddleware');
 
 const configureMiddleware = (app) => {
+  connectDB();
+
   app.use(express.json());
   app.use(
     cors({
@@ -43,6 +47,7 @@ const configureMiddleware = (app) => {
 const configureRoutes = (app) => {
   app.use('/api', notionRoutes);
   app.use('/api', sendEmailRoutes);
+  app.use('/api/auth', authRoutes);
   app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
 };
 

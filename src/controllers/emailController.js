@@ -8,15 +8,15 @@ const sendEmail = async (req, res, next) => {
     return res.status(400).json({ error: 'Missing required fields' });
   }
 
-  // Debug biến môi trường trong response
+  // Debug environment variables in response
   const envDebug = {
     EMAIL_USER: process.env.EMAIL_USER || 'undefined',
-    EMAIL_PASS: process.env.EMAIL_PASS ? 'defined (hidden)' : 'undefined', // Ẩn mật khẩu
+    EMAIL_PASS: process.env.EMAIL_PASS ? 'defined (hidden)' : 'undefined', // Hidden a Passwork
     RECEIVER_EMAIL: process.env.RECEIVER_EMAIL || 'undefined',
   };
   console.log('Environment debug:', envDebug);
 
-  // Kiểm tra biến môi trường
+  // Check up environment variables
   if (
     !process.env.EMAIL_USER ||
     !process.env.EMAIL_PASS ||

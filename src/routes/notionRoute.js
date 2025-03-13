@@ -12,6 +12,11 @@ const {
   getSettings,
 } = require('../controllers/notionController');
 
+const {
+  authenticateToken,
+  restrictTo,
+} = require('../middlewares/authMiddleware');
+
 // Define asyncHandler
 const asyncHandler = (fn) => (req, res, next) =>
   Promise.resolve(fn(req, res, next)).catch(next);
@@ -39,6 +44,8 @@ router.use(v1Router);
  * @desc Get all posts from Notion
  * @access Public
  */
+
+// router.get('/posts', authenticateToken, restrictTo('admin'), getPosts);
 v1Router.get('/posts', getPosts);
 
 /**

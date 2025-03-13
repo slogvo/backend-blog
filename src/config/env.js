@@ -11,6 +11,7 @@ const loadEnv = () => {
 
   // Debug giá trị
   console.log('NOTION_API_KEY:', process.env.NOTION_API_KEY);
+  console.log('MONGO_URI:', process.env.MONGO_URI);
   console.log(
     'NOTION_POSTS_DATABASE_ID:',
     process.env.NOTION_POSTS_DATABASE_ID,
